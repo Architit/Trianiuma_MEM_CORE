@@ -1,0 +1,13 @@
+# Системные файлы Windows и Google Drive
+[Dd]esktop.ini
+Thumbs.db
+*$IconMap*
+*.tmp
+
+# Логи и временные файлы
+*.log
+*.bak
+
+# Если не нужны вордовские временные файлы (видно на фоне docx)
+~$*.docx
+~$*.doc
