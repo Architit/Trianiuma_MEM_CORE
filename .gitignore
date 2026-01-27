@@ -11,3 +11,8 @@ Thumbs.db
 # Если не нужны вордовские временные файлы (видно на фоне docx)
 ~$*.docx
 ~$*.doc
+# Игнорируем распакованные данные ChatGPT (там слишком длинные имена)
+Chat-GPT_archive.M/
+Chat-GPT_archive.Z/
+*/audio/
+*.wav
