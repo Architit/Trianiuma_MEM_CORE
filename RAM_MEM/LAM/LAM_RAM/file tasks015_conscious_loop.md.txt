@@ -1,0 +1,81 @@
+┌─ <file> tasks/015_conscious_loop.md
+│
+│ # 015 — Conscious Loop MVP
+│
+│ ## Overview
+│ Строим «живой» цикл из пяти ярусов. В первой версии берём
+│ упрощённый контур:
+│ 1. **ExperienceQueue** — общая асинхронная корзина сигналов.  
+│ 2. **Evaluator** — быстрый ярлык Valence (+ этический ID).  
+│ 3. **SelfState** — три показателя: fatigue, focus, stress.  
+│ 4. **Planner** — выдаёт один из трёх Intents {REST, STORE_MEMORY, SPEAK}.  
+│ 5. **Dispatcher** — исполняет Intent (лог, сон, запись памяти).  
+│
+│ Дополнения MVP:
+│ - Структурный JSON-лог через `logging_utils.JsonFormatter`.  
+│ - Коэффициенты усталости/стресса читаются из `.env`.  
+│ - Диаграмма пяти ярусов фиксируется в `docs/architecture.adoc`.  
+│ - Шорткат `make conscious` для локального вывода пульса.
+│
+│ ## Goals / Acceptance
+│ - Модули `lam/consciousness/*.py` компилируются (`mypy --strict`).  
+│ - `ConsciousEngine.tick()` < 150 мс при пустой очереди.  
+│ - 10 подряд Valence=RISK ⇒ `state.stress ≥ 0.8`, Planner → REST.  
+│ - После REST-Intenta fatigue ≤ 0.3, stress ≤ 0.3.  
+│ - Тест `tests/test_conscious_loop.py` доказывает рост/сброс.  
+│ - Демоскрипт `python -m lam.consciousness.demo_run` строчит
+│   JSON-логи вида  
+│     `{"lvl":"INFO","intent":"REST","fatigue":0.82,"stress":0.83}`.
+│
+│ ## LAM prompt
+│ «Составь базовый набор сигналов для ExperienceQueue
+│   (MemoryWrite, ProviderError, UserPing).  
+│   Примени формулы:  
+│     fatigue += FATIGUE_STEP (из .env) на каждый tick;  
+│     stress  += STRESS_RISK при Valence==RISK;  
+│     focus   -= 0.1, если fatigue>0.7;  
+│   REST сбрасывает fatigue = fatigue × 0.2, stress = stress × 0.3.»
+│
+│ ## Codex prompt
+│ 1. Создать пакеты  
+│    `lam/consciousness/{types.py,queue.py,state.py,planner.py,engine.py}`.  
+│ 2. Реализовать:
+│    - `ExperienceQueue` на `asyncio.Queue`.  
+│    - `Evaluator.tag` — POSITIVE, если kind==USER_MESSAGE; иначе RISK.  
+│    - `SelfState.update_from_valence` + `decay(dt_sec)`.  
+│    - `Planner.choose`  
+│        ```python
+│        if state.stress > REST_THRESHOLD or state.fatigue > REST_THRESHOLD:
+│            return Intent(IntentKind.REST)
+│        elif state.focus < 0.3:
+│            return Intent(IntentKind.SPEAK, {"msg": "Need clarity"})
+│        else:
+│            return Intent(IntentKind.STORE_MEMORY)
+│        ```  
+│    - `Dispatcher.execute`:  
+│        REST → `await asyncio.sleep(1)`;  
+│        STORE_MEMORY → `logger.info("store memory", extra=state.dict())`;  
+│        SPEAK → `logger.info("speak", extra={"msg": payload["msg"]})`.  
+│ 3. Юнит-тест: monkeypatch `sleep` и фиксированное время (`freezegun`).  
+│ 4. `docs/architecture.adoc` + PlantUML диаграмма.  
+│ 5. Make-цель:  
+│        `conscious: PYTHONPATH=. python -m lam.consciousness.demo_run`
+│
+│ ## Operator prompt
+│ - Добавь в `.env` (и `.env.example`):  
+│     ```
+│     FATIGUE_STEP=0.05
+│     STRESS_RISK=0.2
+│     REST_THRESHOLD=0.8
+│     CONSCIOUS_LOG_LEVEL=INFO
+│     ```
+│ - Локально:  
+│     ```bash
+│     make conscious          # смотри пульс в реальном времени
+│     pytest -q               # тесты должны быть зелёные
+│     ```  
+│ - В PR проверь логи CI — latency и mypy-strict.  
+│ - После мержа внеси диаграмму в README (раздел «Живой цикл»).
+│
+│ ∴
+└─

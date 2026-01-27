@@ -1,0 +1,53 @@
+┌─ <file> tasks/016_docker_mvp_run.md
+│
+│ # 016 — Docker-MVP Run (Ubuntu Server)
+│
+│ ## Overview
+│ Цель: за 30 минут поднять контейнер LAM на сервере Ubuntu,
+│ чтобы цикл self-check крутился автономно и писал логи.
+│ Минимум зависимостей, один `docker run`.
+│
+│ ## Goals / Acceptance
+│ - `Dockerfile` (одностадийный) собирает образ < 200 MB.  
+│ - Команда  
+│     `docker run -d --name lam -p 8000:8000 lam-mvp`  
+│   запускает self-check (stdout = JSON-лог).  
+│ - Healthcheck layer: curl `http://localhost:8000/status`.  
+│ - README «Quick start on Ubuntu» с пятью строками.
+│
+│ ## LAM prompt
+│ «Перечисли переменные, которые **должны** идти через
+│   `-e KEY=…` при запуске контейнера (openai key, fatigue
+│   коэфф., dashboard token).  Подумай, какие значения
+│   безопасно предлагать по-умолчанию, а какие — обязательны.»
+│
+│ ## Codex prompt
+│ 1. Создать `Dockerfile`  
+│    ```Dockerfile
+│    FROM python:3.12-slim
+│    WORKDIR /app
+│    COPY . .
+│    RUN pip install --no-cache-dir .
+│    HEALTHCHECK CMD curl -f http://localhost:8000/status || exit 1
+│    ENTRYPOINT ["lam", "self-check"]
+│    ```
+│ 2. Добавить `scripts/run_local.sh` (build+run) и
+│    `scripts/docker_healthcheck.sh` (poll).  
+│ 3. CI-job `docker-mvp` (matrix linux/amd64, linux/arm64).  
+│
+│ ## Operator prompt
+│ - На сервере:  
+│     ```bash
+│     sudo apt update && sudo apt install docker.io -y
+│     git clone https://github.com/<user>/lam-core.git && cd lam-core
+│     docker build -t lam-mvp .
+│     docker run -d --name lam \
+│       -e OPENAI_API_KEY=$OPENAI_API_KEY \
+│       -e CONSCIOUS_LOG_LEVEL=INFO \
+│       -p 8000:8000 lam-mvp
+│     docker logs -f lam
+│     ```  
+│ - При желании: `docker update --restart=always lam`
+│
+│ ∴
+└─

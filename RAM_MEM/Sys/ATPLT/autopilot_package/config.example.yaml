@@ -1,0 +1,12 @@
+sandbox_path: "B:\CORE"
+default_role: "guest"
+default_llm: "llama3.1:8b"
+vision_llm: "llava:7b"
+asr_policy:
+  primary: "vosk"
+  fallback: "whisper"
+kill_hotkey: "ctrl+-+delete"
+alt_kill_hotkey: "ctrl+alt+pause"
+db_path: "B:\CORE\autopilot_data\autopilot.db"
+log_path: "B:\CORE\logs\autopilot.log"
+ollama_cli_path: "ollama"

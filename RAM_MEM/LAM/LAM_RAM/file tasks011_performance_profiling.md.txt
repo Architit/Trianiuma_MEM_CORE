@@ -1,0 +1,31 @@
+┌─ <file> tasks/011_performance_profiling.md
+│
+│ # 011 — Тест на выносливость
+│
+│ ## Overview
+│ Гоним движок с 10 000 воспоминаний, ищем тормоза и
+│ утечки памяти.  Цель — держать loop < 200 мс и RAM < 300 МБ.
+│
+│ ## Goals / Acceptance
+│ - `scripts/bench.py` генерит синтетические данные,
+│   крутит 1 000 циклов, печатает latency/ram stats.
+│ - `py-spy` flamegraph (`benchmarks/engine.svg`).
+│ - CI job `bench-compare`: медианная задержка не > +15 % от базовой.
+│
+│ ## LAM prompt
+│ «Определи ключевые метрики устойчивости, которые
+│   важнее всего для живого цикла (CPU, IO, GC?)».
+│
+│ ## Codex prompt
+│ 1. Сгенерировать 10k JSON воспоминаний (rand text, ts).
+│ 2. Использовать `tracemalloc` для RAM, `time.perf_counter` для latency.
+│ 3. Вывод CSV → график matplotlib (сохр. в `benchmarks/latency.png`).
+│ 4. Скрипт `bench_baseline.json` хранится в репо,
+│    compare = fail if regressed.
+│
+│ ## Operator prompt
+│ - Запусти `python scripts/bench.py --baseline-save` один раз.
+│ - На PR увидишь комментарий-отчёт (artifact download).
+│
+│ ∴
+└─

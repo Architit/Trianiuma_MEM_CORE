@@ -1,0 +1,30 @@
+┌─ <file> tasks/014_security_dependency_scan.md
+│
+│ # 014 — Щит зависимостей
+│
+│ ## Overview
+│ Сканы CVE + авто-обновления библиотек, чтобы дыр не копилось.
+│
+│ ## Goals / Acceptance
+│ - Workflow `security.yml`:
+│   - запускает Grype на Docker-образе;  
+│   - сообщает «0 high CVE».
+│ - `renovate.json` → weekly PR обновлений.
+│ - README badge “dependencies: up-to-date”.
+│
+│ ## LAM prompt
+│ «Определи список критичных CVE-меток, при которых
+│   мы блокируем релиз (high, critical).»
+│
+│ ## Codex prompt
+│ 1. Интегрировать `anchore/grype-action@v3`.
+│ 2. Конфиг Grype: fail-on `severity=high`.
+│ 3. Добавить badge с Shields.io.
+│ 4. `renovate.json`: preset `schedule:weekly`, `automergeType=pr`.
+│
+│ ## Operator prompt
+│ - Включи Dependabot advisories в репо settings.  
+│ - Проверь первый отчёт security-workflow (artefact HTML).
+│
+│ ∴
+└─

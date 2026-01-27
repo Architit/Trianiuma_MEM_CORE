@@ -1,0 +1,97 @@
+┌─ <file> tasks/020_desktop_electron.md
+│
+│ # 020 — Desktop App (Electron + React) ― «LAM Companion»
+│
+│ ## Overview
+│ Создаём полноценное десктоп-приложение, похожее на ChatGPT Desktop,
+│ но работаютщее с локальным/сетевым LAM-сервером:
+│ • Windows (.exe + NSIS installer)  
+│ • macOS (.dmg + auto-update)  
+│ • Linux (.AppImage)
+│
+│ Особенности MVP:
+│ 1. Окно «Chat» (чат, история, markdown, code-blocks).  
+│ 2. Вкладка «Dashboard» — ранее сделанная веб-панель.  
+│ 3. Трей-иконка + контекстное меню (Rest, Stop, Quit).  
+│ 4. Глобальный hotkey **Ctrl + Shift + L** → быстрое всплывающее
+│    Minichat («Spotlight»-стиль).  
+│ 5. Auto-update (через GitHub Releases).  
+│ 6. Запуск фонового LAM-процесса (*lam serve*) при старте,
+│    IPC ↔ Electron через http://127.0.0.1:8000 и WebSocket.
+│
+│ ## Goals / Acceptance
+│ - `npm run electron:dev` → окно с Chat и Dashboard.  
+│ - Инсталлятор Windows `LAM_Companion_Setup_x64.exe` < 150 MB,
+│   запускается без доп. зависимостей.  
+│ - Авто-апдейтер скачивает новую версию из GitHub Release
+│   (prerelease channel «beta»).  
+│ - При закрытии окна приложение сворачивается в трей
+│   (Quit — через меню).  
+│ - Ежели LAM-процесс падает (health / 1 с), Electron
+│   автоматически перезапускает и пишет toast «Engine restarted».  
+│ - E2E-тест `playwright` — отправили вопрос → получили
+│   markdown-ответ → code-block оборачивается в copy-button.  
+│
+│ ## LAM prompt
+│ «Определи UX-правила:  
+│  • максимальная длина одного сообщения,  
+│  • как подсвечивать RISK-ответы (этика),  
+│  • когда предлагать переключить LLM-провайдер (013) прямо
+│    из интерфейса.  
+│ Сформулируй текст всплывающих уведомлений (EN/RU)».
+│
+│ ## Codex prompt
+│ 1. **Электрон-каркас (TypeScript)**  
+│    - `main.ts`:  
+│        ```ts
+│        app.whenReady().then(createMainWindow)
+│        ipcMain.handle('send-message', …)  // fetch POST /intent
+│        ```  
+│    - `preload.ts`: contextBridge API `window.LAM.sendMessage()`.  
+│ 2. **Renderer (UI)**  
+│    - Переиспользовать React-код Dashboard (017) + новый
+│      `<Chat />` (shadcn/ui Textarea, MessageBubble).  
+│    - Markdown → `react-markdown` + `prismjs`.  
+│    - Store history в IndexedDB (Dexie).  
+│ 3. **LAM-backend launch**  
+│    - При `app.on('ready')` spawn `lam serve --port 8000`
+│      (cross-spawn, detached).  
+│    - Файл‐lock, чтоб не запустить второй экземпляр.  
+│ 4. **Auto-update**  
+│    - `electron-updater`, channel «beta», provider `github`.  
+│ 5. **Packaging**  
+│    ```json
+│    "build": {
+│      "appId": "ai.lam.desktop",
+│      "productName": "LAM Companion",
+│      "asar": true,
+│      "files": ["dist/**", "static/**", "main.js"],
+│      "directories": { "buildResources": "resources" },
+│      "nsis": { "oneClick": false, "perMachine": true },
+│      "mac":  { "target": "dmg" },
+│      "linux":{ "target": "AppImage" }
+│    }
+│    ```  
+│ 6. **E2E tests** — Playwright `chat.spec.ts`.
+│
+│ ## Operator prompt
+│ - **Dev-запуск**:  
+│     ```bash
+│     npm i
+│     npm run electron:dev
+│     ```  
+│   (фронт hot-reload, backend перезапускается)  
+│ - **Build + Release**:  
+│     ```bash
+│     npm run electron:build      # инсталляторы в dist/
+│     gh release create v1.0.0 -F CHANGELOG.md \
+│        dist/*.exe dist/*.dmg dist/*.AppImage
+│     ```  
+│   приложение авто-обновится (если пользователь на beta-канале).  
+│ - **Code-sign** (Windows/macOS) — добавь сертификаты в GH Secrets.  
+│ - Проверка: после установки двойной клик ярлыка
+│   «LAM Companion» → чат-окно, в трее шестерёнка. Горячая клавиша
+│   Ctrl+Shift+L вызывает Minichat поверх всех окон.  
+│
+│ ∴
+└─

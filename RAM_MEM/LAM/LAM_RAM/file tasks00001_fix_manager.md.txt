@@ -1,0 +1,89 @@
+┌─ <file> tasks/00001_fix_manager.md
+│
+│ # 018 — Fix Manager  (баг‑очередь + жизненный цикл)
+│
+│ ## Overview
+│ Нужен симметричный модуль к TestManager: он принимает сообщения о
+│ багах, хранит их, меняет статус, шлёт события в EventManager и
+│ даёт API для Dashboard.  Минимальное постоянство — JSON‑файл,
+│ дальше можно мигрировать в БД.
+│
+│ ## Goals / Acceptance
+│ - Модуль `lam.fix_manager.FixManager` с CRUD‑методами и JSON‑storage.  
+│ - Enum `FixStatus {NEW, IN_WORK, DONE, REJECTED}`.  
+│ - FastAPI‑роуты:  
+│     * **GET** `/fix` ?status=NEW  
+│     * **POST** `/fix` {title, description, tags?}  
+│     * **PATCH** `/fix/{id}` {status, owner?}  
+│ - Каждое действие порождает `Event(kind="FIX", …)` → попадает в
+│   логи Conscious‑Loop.  
+│ - Тесты `tests/test_fix_manager.py` — покрытие ≥ 90 %.  
+│ - CLI‑обёртка:  
+│     ```
+│     lam fix add   --title "Crash" --desc "stacktrace..."
+│     lam fix list  --status NEW
+│     lam fix set   <id> --status IN_WORK --owner Kirill
+│     ```
+│ - Dashboard (вкладка “Fixes”) показывает таблицу с цветовой
+│   подсветкой статуса.
+│
+│ ## Prompts
+│
+│ ### LAM prompt
+│ «Держи внутреннюю приоритетную политику:  
+│   • Если `tags` содержит `"critical"`, то EventManager создаёт
+│     BLOCK‑event и само‑планировщик ставит Intent‑REST (паузу) до
+│     устранения.  
+│   • При статусе `DONE`, если прошло < 24 h, LAM генерирует
+│     follow‑up: «Проверить регрессию?»»
+│
+│ ### User prompt (Kyrylo → LAM)
+│ «/fix add title:"<краткая суть>"  
+│    description:"<как воспроизвести + ожидание>"  
+│    tags:[ui,critical]»  
+│ LAM отвечает ID и предполагаемым приоритетом.
+│
+│ ### Codex prompt  (для автогенератора кода)
+│ 1. Создать `lam/fix_manager.py` со скелетом:  
+│    ```python
+│    class FixManager:
+│        def add(self, title:str, description:str, tags:List[str]|None=None)->FixItem: ...
+│        def assign(self, id:str, owner:str)->None: ...
+│        def update_status(self, id:str, status:FixStatus)->None: ...
+│        def list(self, status:FixStatus|None=None)->List[FixItem]: ...
+│    ```  
+│ 2. JSON‑storage (`memory/fixes.json`) автосоздаётся.  
+│ 3. FastAPI router в `lam/web/router_fixes.py`, тег «fix».  
+│ 4. CLI‑команды через `typer` sub‑app `lam fix …`.  
+│ 5. Тесты: edge‑cases (неизвестный id, двойное назначение).  
+│
+│ ### Operator prompt  (DevOps/CI)
+│ - Добавь в README раздел «Bug‑flow».  
+│ - Проверь:  
+│     ```bash
+│     lam fix add --title "REST loop freeze" --desc "steps…" --tags critical
+│     lam fix list
+│     ```  
+│ - В Dashboard вкладка «Fixes»: статус NEW → клик «Assign me» → id
+│   окрашивается жёлтым (IN_WORK).  
+│ - CI job `fix-manager-test` в matrix linux/macos.
+│
+│ ### Agent prompt  (TestManager / CI‑бот)
+│ - На каждый Pull Request ищи текст “fixes #ID” → пингуй
+│   `/fix/{ID}` status=IN_WORK.  
+│ - Если все упомянутые фиксы перешли в `DONE`, комментируй PR:
+│   «All referenced fixes resolved — merge allowed».  
+│ - Еженощно дергай `/fix?status=NEW` и пость summary в Slack‑канал.
+│
+│ ## File map
+│ ```
+│ lam/
+│   fix_manager.py
+│   web/router_fixes.py
+│ tasks/018_fix_manager.md
+│ tests/test_fix_manager.py
+│ memory/fixes.json           # авто‑создаётся
+│ ```
+│
+│ ∴
+└─

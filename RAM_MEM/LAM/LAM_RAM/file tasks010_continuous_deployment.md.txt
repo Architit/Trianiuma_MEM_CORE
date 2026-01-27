@@ -1,0 +1,35 @@
+┌─ <file> tasks/010_continuous_deployment.md
+│
+│ # 010 — Автовыпуск & SemVer
+│
+│ ## Overview
+│ После зелёного CI релиз формируется сам: тег, Docker,
+│ sdist/wheel, changelog — всё в одном месте.
+│
+│ ## Goals / Acceptance
+│ - Workflow `release.yaml`:
+│   1) читает версию из `pyproject.toml`;
+│   2) создаёт тег vX.Y.Z, если нет;
+│   3) GitHub Release + прикреплённые артефакты.
+│ - CHANGELOG собирается `towncrier`.
+│ - SemVer: patch = fix, minor = feat, major = breaking.
+│
+│ ## LAM prompt
+│ «Определи правила инкремента версии из типов коммитов;
+│   как откатываем если релиз сломал prod?»
+│
+│ ## Codex prompt
+│ 1. Добавить `towncrier` + `pyproject.toml [tool.towncrier]`.
+│ 2. Workflow шаги:
+│    - `hatch version patch|minor|major` (auto-detected).
+│    - `docker-build` job как needs.
+│    - `gh release create`.
+│ 3. CHANGELOG.md автоген при релизе.
+│
+│ ## Operator prompt
+│ - Добавь Conventional Commits чек в CI (`commitlint`).
+│ - Test-run: `echo "chore: release dry-run" >> dummy && git commit`.
+│ - Убедись, что релиз помечен как “draft”.
+│
+│ ∴
+└─

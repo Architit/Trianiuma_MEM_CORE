@@ -1,0 +1,76 @@
+┌─ <file> tasks/017_web_gateway_dashboard.md
+│
+│ # 017 — FastAPI Gateway + React Dashboard MVP
+│
+│ ## Overview
+│ Делаем тонкий HTTP/WebSocket слой и простую веб-панель:
+│   `/status` — JSON SelfState,  
+│   `/ws/logs` — поток логов,  
+│   React-страница показывает таблицу памяти и
+│   индикатор усталости.  Сборка React кладётся в образ.
+│
+│ ## Goals / Acceptance
+│ - `lam/web/api.py` (FastAPI, 25 строк)  → статус + WS-логи.  
+│ - `web/` Vite React app: компоненты `StatusCard`,
+│   `LogStream`, билд < 150 kB.  
+│ - Docker-образ из (016) расширен: запускает
+│   `uvicorn lam.web.api:app --host 0.0.0.0 --port 8000`.  
+│ - При заходе на `http://<host>:8000/` открывается
+│   дашборд, который в реальном времени красит REST-фазы.
+│
+│ ## LAM prompt
+│ «Опиши UX-сценарий: что оператор делает, увидев,
+│   что fatigue>0.9?  Предложи кнопку/действие, которое
+│   Dashboard может послать (например Intent REST).»
+│
+│ ## Codex prompt
+│ 1. **FastAPI:**  
+│    ```python
+│    app = FastAPI()
+│    @app.get("/status")  # returns engine.state.dict()
+│    @app.websocket("/ws/logs")  # stream from engine.log_stream()
+│    @app.get("/")  # serve static index.html
+│    ```  
+│ 2. **React:**  
+│    - Vite + shadcn/ui setup.  
+│    - `LogStream` открывает `ws://<location>/ws/logs`.  
+│    - `StatusCard` опрашивает `/status` каждую секунду.  
+│ 3. **Docker update:** multi-stage:  
+│    - build React (`npm ci && npm run build`)  
+│    - copy `dist/` to `/app/static/`  
+│    - CMD запускает `uvicorn`.
+│ 4. **Unit-test:** `pytest` + `httpx.AsyncClient`
+│    проверяет 200 OK `/status`.
+│
+│ ## Operator prompt
+│ - Локально:  
+│     ```bash
+│     cd web && npm i && npm run dev
+│     ```  
+│   открывай `localhost:5173` — должен видеть пульс (mock).  
+│ - В контейнере: rebuild → `docker run -p 8000:8000 lam-web`.  
+│ - Проверь live-логи: открой Dashboard,
+│   сделай `docker exec lam pkill -USR1 python` (симулируй RISK)
+│   — цвет строки должен стать красным.
+│
+│ ∴
+└─
+
+
+
+
+### API Spec
+GET /status, GET /memory, POST /intent, GET /metrics, WS /ws/logs
+Auth: Bearer DASHBOARD_TOKEN header except /status.
+[append full table]
+
+### Front Layout
+- <Header> provider + online badge
+- <Sidebar> (dashboard / memory / logs / settings)
+- <StatusCard> bars (tailwind progress)
+- <IntentPanel> form REST/SPEAK
+Colors threshold table [see doc].
+
+### Dockerfile snippet
+[insert multi-stage above]
+

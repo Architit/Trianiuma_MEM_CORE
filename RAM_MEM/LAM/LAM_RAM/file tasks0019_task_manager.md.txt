@@ -1,0 +1,87 @@
+┌─ <file> tasks/0019_task_manager.md
+│
+│ # 019 — Task Manager  (функциональные задачи и дорожная карта)
+│
+│ ## Overview
+│ В LAM‑экосистеме теперь три параллельных «потока»:
+│   • TestManager — тест‑циклы,  
+│   • FixManager — баги,  
+│   • **TaskManager** — продуктовые задачи, улучшения, идеи.  
+│
+│ Цель TaskManager: хранить и отслеживать фичи/улучшения,
+│ связывать их с Release (#010), автоматически формировать
+│ CHANGELOG и подсвечивать зависимость «фиксы закрыты —
+│ фича считается done».
+│
+│ ## Goals / Acceptance
+│ - Модуль `lam.task_manager.TaskManager` с CRUD + JSON‑storage.  
+│ - Enum `TaskStatus {TODO, IN_PROGRESS, REVIEW, DONE, DEFERRED}`.  
+│ - Поля `kind` {feature, improvement, chore, research}.  
+│ - Взаимосвязь: Task может ссылаться на Fix‑ID и Test‑ID
+│   (`blocks`, `depends_on`).  
+│ - FastAPI роуты:  
+│     * **GET  /task** `?status=TODO&kind=feature`  
+│     * **POST /task** (body title,desc,kind,tags,blocks?)  
+│     * **PATCH /task/{id}`** (status,owner,depends_on)  
+│ - CLI команды:  
+│     ```
+│     lam task add            --title "Dashboard PWA" --kind feature
+│     lam task list           --status TODO
+│     lam task set <id>       --status IN_PROGRESS --owner Kyrylo
+│     lam task link-fix <id>  F12345   # blocks
+│     ```
+│ - Dashboard: вкладка “Roadmap” — канбан‑доска (TODO ➜ DONE).  
+│ - Тесты `tests/test_task_manager.py` покрытие ≥ 90 %.
+│
+│ ## Prompts
+│
+│ ### LAM prompt
+│ «Используй правила приоритета Roadmap:  
+│  • feature без блокирующих фиксов ⇒ приоритет low,  
+│  • feature + critical fix ⇒ priority high,  
+│  • research ≥ 14 дней без активности ⇒ статус DEFERRED.  
+│  При переходе в DONE сформируй заметку для CHANGELOG.»
+│
+│ ### User prompt  (Kyrylo → LAM)
+│ «/task add title:"<что сделать>"  
+│    description:"<почему важно>"  
+│    kind:feature|improvement|chore|research  
+│    tags:[…]  
+│    blocks:[FixID,…]»  
+│ LAM вернёт id, предложит owner и эстимейт.
+│
+│ ### Codex prompt
+│ 1. Создать `lam/task_manager.py` (CRUD + JSON).  
+│ 2. Структура `TaskItem` : id, title, desc, created_at,
+│    status, kind, tags [], owner?, blocks [FixID], depends_on [TaskID].  
+│ 3. FastAPI router `router_tasks.py`, тег «task».  
+│ 4. CLI sub‑app `lam task …` через `typer`.  
+│ 5. Канбан‑endpoint `/task/board` — сгруппированная выдача по status.  
+│ 6. Тесты: создание, смена статуса, блокировки (не может стать DONE,
+│    если есть OPEN FixID в blocks).  
+│
+│ ### Operator prompt  (DevOps/CI)
+│ - В README раздел **“Roadmap workflow”**.  
+│ - Ночной cron‑job:  
+│     `lam task list --status TODO --kind research`  
+│   → summary в лог.  
+│ - Вернились все blocking‑фиксы ➜ CI‑бот отмечает Task DONE
+│   и генерирует PR «CHANGELOG update».  
+│
+│ ### Agent prompt  (Roadmap‑bot)
+│ - На каждый Pull Request ищи “implements #T<ID>”:  
+│   → `PATCH /task/{ID}` status=REVIEW owner=«<PR author>».  
+│ - После merge → status = DONE, добавляем строку в `CHANGELOG.md`.  
+│
+│ ## File map
+│ ```
+│ lam/
+│   task_manager.py
+│   web/router_tasks.py
+│ tasks/019_task_manager.md
+│ tests/test_task_manager.py
+│ memory/tasks.json             # авто‑создаётся
+│ ```
+│
+│ ∴
+└─

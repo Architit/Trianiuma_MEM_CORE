@@ -1,0 +1,99 @@
+# lam/consciousness/core.py
+from enum import Enum, auto
+from typing import List, Dict, Any
+from pydantic import BaseModel, Field
+import datetime as dt
+
+
+# 0 ─────────────────────────── Common types
+Timestamp = dt.datetime
+Vector    = List[float]
+
+
+# 1 ─────────────────────────── Perception
+class SignalKind(Enum):
+    MEMORY          = auto()
+    NETWORK_EVENT   = auto()
+    METRIC_UPDATE   = auto()
+    USER_MESSAGE    = auto()
+
+
+class Signal(BaseModel):
+    kind:  SignalKind
+    data:  Dict[str, Any]
+    when:  Timestamp = Field(default_factory=dt.datetime.utcnow)
+
+
+class ExperienceQueue:
+    """Async FIFO канал всех входящих ощущений."""
+    async def push(self, signal: Signal) -> None: ...
+    async def drain(self) -> List[Signal]: ...
+
+
+# 2 ─────────────────────────── Evaluation
+class Valence(Enum):
+    POSITIVE = auto()
+    RISK     = auto()
+    NEUTRAL  = auto()
+    UNKNOWN  = auto()
+
+
+class Evaluator:
+    """Быстрый эвристический фильтр + вызов этического движка."""
+    async def tag(self, signal: Signal) -> Valence: ...
+    async def ethics_id(self, signal: Signal) -> str | None: ...
+
+
+# 3 ─────────────────────────── Self-Reflection
+class SelfState(BaseModel):
+    focus:     float = 0.5  # 0..1
+    fatigue:   float = 0.0
+    stress:    float = 0.0
+    last_tick: Timestamp = Field(default_factory=dt.datetime.utcnow)
+
+    def update_from_valence(self, v: Valence) -> None: ...
+    def decay(self, dt_sec: float) -> None: ...
+
+
+# 4 ─────────────────────────── Intent Planning
+class IntentKind(Enum):
+    SPEAK        = auto()
+    STORE_MEMORY = auto()
+    REST         = auto()
+    CALL_API     = auto()
+
+
+class Intent(BaseModel):
+    kind: IntentKind
+    payload: Dict[str, Any] = {}
+
+
+class Planner:
+    """Выбор намерений на основе SelfState + политики."""
+    async def choose(self, state: SelfState) -> Intent: ...
+
+
+# 5 ─────────────────────────── Action Dispatch
+class ActionDispatcher:
+    """Матч-таблица Intent → конкретный модуль."""
+    async def execute(self, intent: Intent) -> None: ...
+
+
+# 6 ─────────────────────────── Conscious Loop
+class ConsciousEngine:
+    def __init__(self):
+        self.queue      = ExperienceQueue()
+        self.evaluator  = Evaluator()
+        self.state      = SelfState()
+        self.planner    = Planner()
+        self.dispatcher = ActionDispatcher()
+
+    async def tick(self) -> None:
+        signals = await self.queue.drain()
+        for s in signals:
+            v  = await self.evaluator.tag(s)
+            self.state.update_from_valence(v)
+        self.state.decay((dt.datetime.utcnow()-self.state.last_tick).total_seconds())
+        intent = await self.planner.choose(self.state)
+        await self.dispatcher.execute(intent)
+        self.state.last_tick = dt.datetime.utcnow()

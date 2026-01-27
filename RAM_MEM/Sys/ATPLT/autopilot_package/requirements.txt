@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+pyautogui
+pywinauto
+keyboard
+pynput
+numpy
+pillow
+opencv-python
+loguru
+python-dotenv
+send2trash
+sqlalchemy
+vosk
+sounddevice

@@ -1,0 +1,34 @@
+┌─ <file> tasks/012_web_dashboard.md
+│
+│ # 012 — Веб-панель наблюдения
+│
+│ ## Overview
+│ Лёгкий сайт: память, статус цикла, живые логи. 
+│ React + Vite, отдаётся FastAPI.
+│
+│ ## Goals / Acceptance
+│ - `/web` → Vite React app, `npm run build` в `static/`.
+│ - Компоненты:
+│   1) MemoryTable (поиск/фильтр);  
+│   2) EngineStatus (delay, errors, provider);  
+│   3) LogStream (WebSocket tail-f).
+│ - FastAPI endpoint `GET /` → index.html, WS `/ws/logs`.
+│ - Auth: Bearer token из `.env`.
+│
+│ ## LAM prompt
+│ «Опиши UX-сценарии: какие действия оператор захочет делать
+│   прямо из панели?»
+│
+│ ## Codex prompt
+│ 1. Создать `web/` проект (`npm create vite@latest` + shadcn/ui).
+│ 2. FastAPI router `router_dashboard.py`.
+│ 3. Docker multi-stage: `npm ci && npm run build` во второй слой.
+│ 4. Юнит-тест: `pytest` + `httpx.AsyncClient` проверяет `200 /`.
+│
+│ ## Operator prompt
+│ - `npm i && npm run dev` — локально посмотреть.  
+│ - Добавь `DASHBOARD_TOKEN` в `.env`.
+│ - Проверь лаив-лог: убей провайдера → красный индикатор.
+│
+│ ∴
+└─
