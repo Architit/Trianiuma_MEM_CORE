@@ -16,3 +16,4 @@ Format:
 2026-02-16 07:14 UTC — governance: mirrored SoT M45 t72 close-gate decision checkpoint (`essrcrd-t72-close-gate-decision-v1`); close-gate decision synced as `BLOCKED` (`DRIFT_NONZERO_227`), unblock action `REDUCE_DRIFT_TO_ZERO_AND_RERUN_T71_T72`.
 2026-02-16 07:16 UTC — governance: mirrored SoT M45 post-stabilization rerun (`essrcrd-t74-post-stabilization-rerun-complete-v1`); synced `drift=0` verification and `COMPLETE` close-gate decision.
 2026-02-16 07:26 UTC — governance: protocol hard-rule synced (`global-final-publish-step-mandatory-v1`) — final close step fixed as mandatory `git push origin main`; `COMPLETE` requires push evidence.
+2026-02-16 07:56 UTC — governance: workflow optimization protocol sync (`workflow-optimization-protocol-sync-v2`) — enforced `M46`, manual intervention fallback, and `ONE_BLOCK_PER_OPERATOR_TURN` across repository protocol surfaces.
