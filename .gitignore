@@ -17,5 +17,10 @@ Chat-GPT_archive.Z/
 */audio/
 *.wav
 .venv/
+venv/
+**/venv/
+ENV/
+env/
 __pycache__/
 tests/__pycache__/
+*.pyc

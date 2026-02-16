@@ -39,3 +39,9 @@ protocol_semantic_en: neutral
 - last_sync_commit: 7eadfe9
 - branch: main
 - git_status: ## main...origin/main
+
+## Governance Sync
+- 2026-02-16 06:56 UTC — gitignore-venv-pyc-coverage-v1
+- scope: local dependency/runtime-artifact hygiene
+- change: `.gitignore` extended with `venv/.venv/env/ENV` and `*.pyc`
+- note: prevention-only for new artifacts; tracked runtime files remain pending dedicated untrack decision

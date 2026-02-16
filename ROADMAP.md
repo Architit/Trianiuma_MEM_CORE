@@ -22,3 +22,4 @@ Status: ACTIVE (baseline establishment)
 - SYSTEM_STATE.md
 - [x] 2026-02-13 — governance: restart semantics normalized (ACTIVE -> Phase 1 EXPORT, NEW -> Phase 2 IMPORT)
 - [x] 2026-02-13 — governance: protocol sync header aligned to RADRILONIUMA-PROJECT/v1.0.0@7eadfe9 [protocol-sync-header-v1]
+- [x] 2026-02-16 — governance: local dependency/runtime-artifact hygiene hotfix (`gitignore-venv-pyc-coverage-v1`) applied in `.gitignore` (venv/.venv/env/ENV + pyc coverage).
