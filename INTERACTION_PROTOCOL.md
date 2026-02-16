@@ -217,3 +217,26 @@ Hard constraint: перед закрытием фазы рабочее дере�
 Правила:
 1. Статус `COMPLETE` допускается только при наличии evidence о final push.
 2. Если final push невозможен, close-gate фиксируется как `BLOCKED` с явной причиной.
+
+---
+
+## 9. Operator Manual Intervention Fallback (mandatory)
+
+В ситуациях, где автопилот не может безопасно завершить шаг (например: network/DNS сбой, повторяющаяся tool-ошибка, блокирующий gate, недоступный remote),
+агент обязан перейти в режим ручного сопровождения оператора.
+
+Обязательные действия:
+1. Подготовить `copy/paste` Action Blocks для оператора (диагностика, безопасное действие, проверка результата).
+2. Явно пометить, что требуется ручное вмешательство: `operator_intervention_required = true`.
+3. Зафиксировать подтверждение уведомления оператора: `operator_notified = true`.
+4. Если активен автопилот, перевести поток в удержание до подтверждения оператора: `autopilot_state = HOLD_FOR_OPERATOR`.
+5. После ручного шага запросить и зафиксировать подтверждение: `operator_acknowledged = true`.
+
+Минимальный формат Action Blocks (обязательный):
+- `ACTION_BLOCK_1_DIAGNOSE`
+- `ACTION_BLOCK_2_APPLY_SAFE_COMMAND`
+- `ACTION_BLOCK_3_VERIFY`
+- `ACTION_BLOCK_4_PUBLISH_OR_BLOCK_REASON`
+
+Правило закрытия:
+- без `operator_notified = true` и `operator_acknowledged = true` закрытие `COMPLETE` недопустимо.
