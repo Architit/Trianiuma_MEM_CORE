@@ -17,3 +17,8 @@ Format:
 2026-02-16 07:16 UTC — governance: mirrored SoT M45 post-stabilization rerun (`essrcrd-t74-post-stabilization-rerun-complete-v1`); synced `drift=0` verification and `COMPLETE` close-gate decision.
 2026-02-16 07:26 UTC — governance: protocol hard-rule synced (`global-final-publish-step-mandatory-v1`) — final close step fixed as mandatory `git push origin main`; `COMPLETE` requires push evidence.
 2026-02-16 07:56 UTC — governance: workflow optimization protocol sync (`workflow-optimization-protocol-sync-v2`) — enforced `M46`, manual intervention fallback, and `ONE_BLOCK_PER_OPERATOR_TURN` across repository protocol surfaces.
+2026-02-17 03:37 UTC — phase 0-4 expansion completed — pytest surface expanded from 1 to 6 checks (`6 passed`), governance + RAM_MEM topology suites added, deterministic test entrypoint added, and docs synchronized.
+2026-02-17 03:54 UTC — sync expansion wave continued — added autopilot package contract checks and expanded suite from 6 to 8 checks (`8 passed`).
+2026-02-17 04:07 UTC — sync expansion wave continued — added gateway/entrypoint contract checks and expanded suite from 8 to 10 checks (`10 passed`).
+2026-02-17 04:14 UTC — negative-path wave added — gateway CLI error paths covered (unknown command, import without archive); suite expanded from 10 to 12 checks (`12 passed`).
+2026-02-19 16:00 UTC — Phase 8.0: Operational Memory Healing Initiated. Goal: Refactor memory_core.py for subtree-aware persistence and align RAM structures with 24 sovereign organs.

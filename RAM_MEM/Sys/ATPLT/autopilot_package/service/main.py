@@ -16,6 +16,7 @@ from service.llm_adapter import LLMAdapter
 from service.asr_manager import ASRManager
 from service.gesture_mouse import GestureListener
 from service.audit import AuditTrail
+from service.security_controls import SecurityControls
 
 # Путь настройки: ожидает, что этот файл запущен из installPath/service
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,6 +52,7 @@ llm = LLMAdapter(default_model=DEFAULT_LLM)
 audit = AuditTrail(db_path=os.path.join(SANDBOX, "autopilot_data", "autopilot.db"), password=DB_PASSWORD)
 asr = ASRManager()
 gesture = GestureListener(save_path=os.path.join(SANDBOX, "gestures")) 
+security = SecurityControls()
 
 # Background tasks start
 @app.on_event("startup")
@@ -73,11 +75,20 @@ async def cmd_endpoint(request: Request):
     data = await request.json()
     if not check_token(data):
         return JSONResponse(status_code=401, content={"error": "unauthorized"})
+    key_ok, key_reason = security.check_key_version(data)
+    if not key_ok:
+        return JSONResponse(status_code=401, content={"error": key_reason})
     role = data.get("role", DEFAULT_ROLE)
     action = data.get("action")
     params = data.get("params", {})
     tx_id = str(uuid.uuid4())
     logger.info(f"Received cmd {action} tx={tx_id} role={role}")
+    if rbac.is_critical(action):
+        if not data.get("confirm", False):
+            return {"status": "confirm_required", "tx": tx_id, "message": "Action requires confirmation"}
+        mfa_ok, mfa_reason = security.check_admin_mfa(role, True, data)
+        if not mfa_ok:
+            return JSONResponse(status_code=401, content={"error": mfa_reason})
     # ... (остальной код)
     # ...
 
@@ -86,11 +97,20 @@ async def nl_endpoint(request: Request):
     data = await request.json()
     if not check_token(data):
         return JSONResponse(status_code=401, content={"error": "unauthorized"})
+    key_ok, key_reason = security.check_key_version(data)
+    if not key_ok:
+        return JSONResponse(status_code=401, content={"error": key_reason})
     # ... (остальной код)
     # ...
 
 @app.post("/admin/change_credentials")
 async def change_credentials(request: Request):
     data = await request.json()
+    key_ok, key_reason = security.check_key_version(data)
+    if not key_ok:
+        return JSONResponse(status_code=401, content={"error": key_reason})
+    mfa_ok, mfa_reason = security.check_admin_mfa("admin", True, data)
+    if not mfa_ok:
+        return JSONResponse(status_code=401, content={"error": mfa_reason})
     # ... (остальной код)
     # ...

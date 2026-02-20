@@ -12,11 +12,12 @@ from service.llm_adapter import LLMAdapter
 from service.asr_manager import ASRManager
 from service.gesture_mouse import GestureListener
 from service.audit import AuditTrail
+from service.security_controls import SecurityControls
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, '..', '.env'))
 TOKEN = os.getenv('AUTOPILOT_TOKEN', 'changeme')
-SANDBOX = os.getenv('SANDBOX_PATH', 'B:\CORE')
+SANDBOX = os.getenv('SANDBOX_PATH', 'B:\\CORE')
 DB_PASSWORD = os.getenv('DB_PASSWORD', 'ELARiON')
 DEFAULT_ROLE = os.getenv('DEFAULT_ROLE', 'guest')
 DEFAULT_LLM = os.getenv('DEFAULT_LLM', 'llama3.1:8b')
@@ -28,6 +29,7 @@ llm = LLMAdapter(default_model=DEFAULT_LLM)
 audit = AuditTrail(db_path=os.path.join(SANDBOX, 'autopilot_data', 'autopilot.db'), password=DB_PASSWORD)
 asr = ASRManager()
 gesture = GestureListener()
+security = SecurityControls()
 
 @app.on_event('startup')
 async def startup_event():
@@ -46,6 +48,9 @@ async def cmd_endpoint(request: Request):
     data = await request.json()
     if not check_token(data):
         return JSONResponse(status_code=401, content={'error': 'unauthorized'})
+    key_ok, key_reason = security.check_key_version(data)
+    if not key_ok:
+        return JSONResponse(status_code=401, content={'error': key_reason})
     role = data.get('role', DEFAULT_ROLE)
     action = data.get('action')
     params = data.get('params', {})
@@ -58,6 +63,9 @@ async def cmd_endpoint(request: Request):
     if rbac.is_critical(action):
         if not data.get('confirm', False):
             return {'status': 'confirm_required', 'tx': tx_id, 'message': 'Action requires confirmation'}
+        mfa_ok, mfa_reason = security.check_admin_mfa(role, True, data)
+        if not mfa_ok:
+            return JSONResponse(status_code=401, content={'error': mfa_reason})
     try:
         result = await executor.execute(action, params)
         audit.log(tx_id, role, action, params, allowed=True, result=result)
@@ -72,6 +80,9 @@ async def nl_endpoint(request: Request):
     data = await request.json()
     if not check_token(data):
         return JSONResponse(status_code=401, content={'error': 'unauthorized'})
+    key_ok, key_reason = security.check_key_version(data)
+    if not key_ok:
+        return JSONResponse(status_code=401, content={'error': key_reason})
     text = data.get('text', '')
     parsed = llm.parse_to_command(text)
     return {'parsed': parsed}
@@ -82,6 +93,12 @@ async def change_credentials(request: Request):
     pin = data.get('admin_pin')
     if pin != os.getenv('ADMIN_PIN'):
         return JSONResponse(status_code=401, content={'error': 'unauthorized'})
+    key_ok, key_reason = security.check_key_version(data)
+    if not key_ok:
+        return JSONResponse(status_code=401, content={'error': key_reason})
+    mfa_ok, mfa_reason = security.check_admin_mfa('admin', True, data)
+    if not mfa_ok:
+        return JSONResponse(status_code=401, content={'error': mfa_reason})
     new_token = data.get('new_token')
     new_pin = data.get('new_pin')
     env_path = os.path.join(BASE_DIR, '..', '.env')
