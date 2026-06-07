@@ -1,3 +1,4 @@
+# Copyright (c) 2026-06-07 RADRILONIUMA / TRIANIUMA Kingdom. All rights reserved.
 # service/main.py (ПАТЧ: Принудительное чтение токена)
 import os
 import sys
