@@ -4,11 +4,17 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if [[ "${1:-}" == "--env-requirements" ]]; then
+  python3 scripts/ubuntu_env_requirements.py --install-plan
+  exit $?
+fi
+
 export PYTEST_ADDOPTS="${PYTEST_ADDOPTS:--p no:cacheprovider}"
 
 PYTEST_BIN=""
 for candidate in \
   "$ROOT_DIR/.venv/bin/pytest" \
+  "$ROOT_DIR/venv/bin/pytest" \
   "$ROOT_DIR/../.venv/bin/pytest" \
   "${ECO_PYTEST_BIN:-}"
 do
@@ -49,16 +55,20 @@ case "${1:---all}" in
     run_pytest_allow_empty -q tests -m "not integration"
     ;;
   --governance)
+    python3 scripts/task_spec_validator.py --fail-fast --file devkit/task_spec_template.yaml
     "$PYTEST_BIN" -q tests -k governance
     ;;
-  --memory)
-    "$PYTEST_BIN" -q tests -k memory
+  --patch-runtime)
+    "$PYTEST_BIN" -q tests/test_patch_runtime_governance.py
+    ;;
+  --preflight)
+    "$PYTEST_BIN" -q tests -k preflight
     ;;
   --ci)
     "$PYTEST_BIN" -q tests --maxfail=1
     ;;
   *)
-    echo "usage: $0 [--all|--unit-only|--integration|--governance|--memory|--ci]"
+    echo "usage: $0 [--all|--unit-only|--integration|--governance|--patch-runtime|--preflight|--env-requirements|--ci]"
     exit 2
     ;;
 esac
